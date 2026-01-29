@@ -73,6 +73,7 @@ func (p *Proxy) GetProxyTarget(ctx *gin.Context, toolboxSubpathRequest bool) (*u
 			if !didRedirect {
 				ctx.Error(common_errors.NewUnauthorizedError(err))
 			}
+			log.Errorf("Redirect but authenticate error: %v", err)
 			return nil, nil, err
 		}
 	}

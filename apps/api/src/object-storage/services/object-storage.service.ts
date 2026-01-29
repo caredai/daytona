@@ -36,6 +36,10 @@ export class ObjectStorageService {
     }
 
     try {
+      if (this.configService.getOrThrow('s3.endpoint').includes('r2.cloudflarestorage.com')) {
+        return this.getR2Credentials(organizationId)
+      }
+
       const bucket = this.configService.getOrThrow('s3.defaultBucket')
       const s3Config: S3Config = {
         endpoint: this.configService.getOrThrow('s3.endpoint'),
@@ -165,6 +169,59 @@ export class ObjectStorageService {
     } catch (error: any) {
       this.logger.error(`AWS STS client setup error: ${error.message}`, error.stack)
       throw new BadRequestException(`Failed to setup AWS client: ${error.message}`)
+    }
+  }
+
+  // https://developers.cloudflare.com/r2/api/tokens/#temporary-access-credentials
+  // https://developers.cloudflare.com/api/resources/r2/subresources/temporary_credentials/methods/create
+  private async getR2Credentials(organizationId: string): Promise<StorageAccessDto> {
+    const cloudflareAccountId = process.env.CLOUDFLARE_ACCOUNT_ID
+    const cloudflareApiToken = process.env.CLOUDFLARE_API_TOKEN
+    const bucket = this.configService.getOrThrow('s3.defaultBucket')
+    const storageEndpoint = this.configService.getOrThrow('s3.endpoint')
+    const parentAccessKeyId = this.configService.getOrThrow('s3.accessKey')
+
+    if (!cloudflareAccountId || !cloudflareApiToken) {
+      throw new BadRequestException('Cloudflare account ID and API token are required for R2 credentials')
+    }
+
+    const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${cloudflareAccountId}/r2/temp-access-credentials`
+
+    const response = await axios.post(
+      apiUrl,
+      {
+        bucket,
+        parentAccessKeyId,
+        permission: 'object-read-write',
+        ttlSeconds: 3600, // 1 hour
+        prefixes: [`${organizationId}/`], // Scope credentials to organization prefix
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${cloudflareApiToken}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+
+    if (!response.data.success || !response.data.result) {
+      const errorMessage = response.data.errors?.[0]?.message || 'Failed to get R2 credentials'
+      throw new BadRequestException(errorMessage)
+    }
+
+    const credentials = response.data.result
+
+    if (!credentials.accessKeyId || !credentials.secretAccessKey || !credentials.sessionToken) {
+      throw new BadRequestException('R2 API response did not return expected credentials')
+    }
+
+    return {
+      accessKey: credentials.accessKeyId,
+      secret: credentials.secretAccessKey,
+      sessionToken: credentials.sessionToken,
+      storageUrl: storageEndpoint,
+      organizationId,
+      bucket,
     }
   }
 }

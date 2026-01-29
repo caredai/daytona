@@ -147,6 +147,7 @@ export type CreateSandboxBaseParams = {
   networkBlockAll?: boolean
   networkAllowList?: string
   ephemeral?: boolean
+  target?: string
 }
 
 /**
@@ -453,7 +454,7 @@ export class Daytona {
           env: params.envVars || {},
           labels: labels,
           public: params.public,
-          target: this.target,
+          target: params.target,
           cpu: resources?.cpu,
           gpu: resources?.gpu,
           memory: resources?.memory,

@@ -1,0 +1,40 @@
+{
+  "name": "@daytonaio/sdk",
+  "version": "0.140.0",
+  "description": "TypeScript SDK for Daytona",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daytonaio/daytona.git"
+  },
+  "author": "Daytona Platforms Inc.",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/daytonaio/daytona/issues"
+  },
+  "homepage": "https://www.daytona.io/docs",
+  "config": {
+    "docsDir": "../../apps/docs/src/content/docs/en/typescript-sdk"
+  },
+  "scripts": {
+    "docs": "bash -O extglob -c 'rm -rf $npm_package_config_docsDir/!(index.mdx)' && typedoc && rm -f $npm_package_config_docsDir/readme.mdx"
+  },
+  "keywords": [],
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "axios": "^1.11.0",
+    "busboy": "^1.0.0",
+    "expand-tilde": "^2.0.2",
+    "fast-glob": "^3.3.0",
+    "form-data": "^4.0.4",
+    "isomorphic-ws": "^5.0.0",
+    "pathe": "^2.0.3",
+    "shell-quote": "^1.8.2",
+    "tar": "^7.5.4",
+    "@daytonaio/api-client": "0.140.0",
+    "@daytonaio/toolbox-api-client": "0.140.0"
+  },
+  "packageManager": "yarn@4.6.0",
+  "type": "commonjs"
+}

@@ -15,6 +15,7 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
 	common_errors "github.com/daytonaio/common-go/pkg/errors"
@@ -192,7 +193,10 @@ func (p *Proxy) hasSandboxAccess(ctx context.Context, sandboxId string, authToke
 
 	apiClient := apiclient.NewAPIClient(clientConfig)
 
-	_, res, _ := apiClient.PreviewAPI.HasSandboxAccess(ctx, sandboxId).Execute()
+	_, res, err := apiClient.PreviewAPI.HasSandboxAccess(ctx, sandboxId).Execute()
+	if res == nil || res.StatusCode != http.StatusOK {
+		log.Errorf("Failed to set runner info in cache: %v, %v", res, err)
+	}
 
 	return res != nil && res.StatusCode == http.StatusOK
 }
