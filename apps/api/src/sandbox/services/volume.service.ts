@@ -142,7 +142,7 @@ export class VolumeService {
       throw new NotFoundException(`Volume with ID ${volumeId} not found`)
     }
 
-    if (volume.state !== VolumeState.READY) {
+    if (volume.state !== VolumeState.READY && volume.state !== VolumeState.ERROR) {
       throw new BadRequestError(`Volume must be in '${VolumeState.READY}' state in order to be deleted`)
     }
 

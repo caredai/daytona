@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 var proxyTransport = &http.Transport{
@@ -43,6 +44,8 @@ func NewProxyRequestHandler(getProxyTarget func(*gin.Context) (targetUrl *url.UR
 			// Error already sent to the context
 			return
 		}
+
+		log.Infof("Proxying request to target: %s", target.String())
 
 		reverseProxy := &httputil.ReverseProxy{
 			Director: func(req *http.Request) {

@@ -159,18 +159,32 @@ func (d *DockerClient) waitForMountReady(ctx context.Context, path string) error
 }
 
 func (d *DockerClient) getMountCmd(ctx context.Context, volume string, subpath *string, path string) *exec.Cmd {
-	args := []string{"--allow-other", "--allow-delete", "--allow-overwrite", "--file-mode", "0666", "--dir-mode", "0777"}
-
-	if subpath != nil && *subpath != "" {
-		// Ensure subpath ends with /
-		prefix := *subpath
-		if !strings.HasSuffix(prefix, "/") {
-			prefix = prefix + "/"
-		}
-		args = append(args, "--prefix", prefix)
+	if d.awsDefaultBucket == "" {
+		log.Errorf("AWS_DEFAULT_BUCKET is not configured, cannot mount volume %s", volume)
+		// Return a command that will fail immediately
+		cmd := exec.CommandContext(ctx, "false")
+		return cmd
 	}
 
-	args = append(args, volume, path)
+	args := []string{"--allow-other", "--allow-delete", "--allow-overwrite", "--file-mode", "0666", "--dir-mode", "0777"}
+
+	// Build prefix: volume directory path (volumeId/) + optional subpath
+	prefix := volume + "/"
+	if subpath != nil && *subpath != "" {
+		// Ensure subpath ends with /
+		subpathStr := *subpath
+		if !strings.HasSuffix(subpathStr, "/") {
+			subpathStr = subpathStr + "/"
+		}
+		prefix = prefix + subpathStr
+	}
+	args = append(args, "--prefix", prefix)
+
+	// https://github.com/awslabs/mountpoint-s3/issues/853#issuecomment-2284633948
+	args = append(args, "--upload-checksums", "off")
+
+	// Use the unified bucket name instead of volume-specific bucket
+	args = append(args, d.awsDefaultBucket, path)
 
 	cmd := exec.CommandContext(ctx, "mount-s3", args...)
 

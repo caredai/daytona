@@ -363,6 +363,9 @@ export class OrganizationService implements OnModuleInit, TrackableJobExecutions
 
     let organization = new Organization(createOrganizationDto.defaultRegionId)
 
+    if (createOrganizationDto.id) {
+      organization.id = createOrganizationDto.id
+    }
     organization.name = createOrganizationDto.name
     organization.createdBy = createdBy
     organization.personal = personal
@@ -573,9 +576,9 @@ export class OrganizationService implements OnModuleInit, TrackableJobExecutions
     await this.redisLockProvider.unlock(lockKey)
   }
 
-  @OnAsyncEvent({
-    event: UserEvents.CREATED,
-  })
+  // @OnAsyncEvent({
+  //   event: UserEvents.CREATED,
+  // })
   @TrackJobExecution()
   async handleUserCreatedEvent(payload: UserCreatedEvent): Promise<Organization> {
     return this.createWithEntityManager(

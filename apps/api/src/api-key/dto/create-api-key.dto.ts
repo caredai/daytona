@@ -39,4 +39,29 @@ export class CreateApiKeyDto {
   @Type(() => Date)
   @IsDate()
   expiresAt?: Date
+
+  @ApiPropertyOptional({
+    description: 'The API key',
+    example: 'dtn_xxx',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  apiKey?: string
+
+  @ApiPropertyOptional({
+    description: 'The organization ID',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  organizationId?: string
+
+  @ApiPropertyOptional({
+    description: 'The user ID',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  userId?: string
 }

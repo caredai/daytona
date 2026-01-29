@@ -135,7 +135,12 @@ export class SnapshotService {
       .getExists()
   }
 
-  async createFromPull(organization: Organization, createSnapshotDto: CreateSnapshotDto, general = false) {
+  async createFromPull(
+    organization: Organization,
+    createSnapshotDto: CreateSnapshotDto,
+    general = false,
+    role?: string,
+  ) {
     if (!organization.defaultRegionId) {
       throw new DefaultRegionRequiredException()
     }
@@ -165,18 +170,20 @@ export class SnapshotService {
 
       this.organizationService.assertOrganizationIsNotSuspended(organization)
 
-      const newSnapshotCount = 1
+      if (role !== 'admin') {
+        const newSnapshotCount = 1
 
-      const { pendingSnapshotCountIncremented } = await this.validateOrganizationQuotas(
-        organization,
-        newSnapshotCount,
-        createSnapshotDto.cpu,
-        createSnapshotDto.memory,
-        createSnapshotDto.disk,
-      )
+        const { pendingSnapshotCountIncremented } = await this.validateOrganizationQuotas(
+          organization,
+          newSnapshotCount,
+          createSnapshotDto.cpu,
+          createSnapshotDto.memory,
+          createSnapshotDto.disk,
+        )
 
-      if (pendingSnapshotCountIncremented) {
-        pendingSnapshotCountIncrement = newSnapshotCount
+        if (pendingSnapshotCountIncremented) {
+          pendingSnapshotCountIncrement = newSnapshotCount
+        }
       }
 
       try {

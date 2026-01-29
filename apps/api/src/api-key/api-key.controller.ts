@@ -3,7 +3,18 @@
  * SPDX-License-Identifier: AGPL-3.0
  */
 
-import { Controller, Post, Get, Delete, Param, Body, UseGuards, ForbiddenException, HttpCode } from '@nestjs/common'
+import {
+  Controller,
+  Post,
+  Get,
+  Delete,
+  Param,
+  Query,
+  Body,
+  UseGuards,
+  ForbiddenException,
+  HttpCode,
+} from '@nestjs/common'
 import { ApiKeyService } from './api-key.service'
 import { CreateApiKeyDto } from './dto/create-api-key.dto'
 import { ApiHeader, ApiOAuth2, ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger'
@@ -61,12 +72,20 @@ export class ApiKeyController {
   ): Promise<ApiKeyResponseDto> {
     this.validateRequestedApiKeyPermissions(authContext, createApiKeyDto.permissions)
 
+    let organizationId = authContext.organizationId
+    let userId = authContext.userId
+    if (authContext.role === 'admin' && createApiKeyDto.organizationId && createApiKeyDto.userId) {
+      organizationId = createApiKeyDto.organizationId
+      userId = createApiKeyDto.userId
+    }
+
     const { apiKey, value } = await this.apiKeyService.createApiKey(
-      authContext.organizationId,
-      authContext.userId,
+      organizationId,
+      userId,
       createApiKeyDto.name,
       createApiKeyDto.permissions,
       createApiKeyDto.expiresAt,
+      createApiKeyDto.apiKey,
     )
 
     return ApiKeyResponseDto.fromApiKey(apiKey, value)
@@ -126,8 +145,15 @@ export class ApiKeyController {
   async getApiKey(
     @AuthContext() authContext: OrganizationAuthContext,
     @Param('name') name: string,
+    @Query('organizationId') organizationId?: string,
+    @Query('userId') userId?: string,
   ): Promise<ApiKeyListDto> {
-    const apiKey = await this.apiKeyService.getApiKeyByName(authContext.organizationId, authContext.userId, name)
+    if (authContext.role !== 'admin' || !organizationId || !userId) {
+      organizationId = authContext.organizationId
+      userId = authContext.userId
+    }
+
+    const apiKey = await this.apiKeyService.getApiKeyByName(organizationId, userId, name)
     return ApiKeyListDto.fromApiKey(apiKey)
   }
 

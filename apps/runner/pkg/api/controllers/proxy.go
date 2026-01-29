@@ -13,6 +13,7 @@ import (
 	proxy "github.com/daytonaio/common-go/pkg/proxy"
 	"github.com/daytonaio/runner/pkg/runner"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 
 	common_errors "github.com/daytonaio/common-go/pkg/errors"
 )
@@ -92,5 +93,6 @@ func getProxyTarget(ctx *gin.Context) (*url.URL, map[string]string, error) {
 		return nil, nil, fmt.Errorf("failed to parse target URL: %w", err)
 	}
 
+	log.Infof("Proxying request to target: %s", target.String())
 	return target, nil, nil
 }

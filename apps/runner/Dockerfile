@@ -1,3 +1,15 @@
+FROM rust:alpine3.23 AS mount-s3
+
+RUN apk add --no-cache fuse fuse-dev make cmake g++ clang-dev git
+
+RUN git clone --single-branch --branch v1.22.0 --recurse-submodules https://github.com/awslabs/mountpoint-s3
+
+WORKDIR /mountpoint-s3
+
+ENV RUSTFLAGS="-C target-feature=-crt-static"
+
+RUN cargo build --release
+
 FROM node:22-alpine AS build
 
 RUN npm install -g corepack && corepack enable
@@ -19,10 +31,11 @@ RUN SKIP_COMPUTER_USE_BUILD=true yarn nx build runner --configuration=production
 
 FROM docker:28.2.2-dind-alpine3.22 AS runner
 
-RUN apk add --no-cache curl rsync
+RUN apk add --no-cache curl rsync fuse-dev g++
 
 WORKDIR /usr/local/bin
 
+COPY --from=mount-s3 /mountpoint-s3/target/release/mount-s3 mount-s3
 COPY --from=build /daytona/dist/apps/runner daytona-runner
 
 RUN chmod +x daytona-runner

@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -104,7 +105,9 @@ func (c *Collector) Collect(ctx context.Context) (*Metrics, error) {
 		default:
 			metrics, err := c.collect(ctx)
 			if err != nil {
-				c.log.Warn("Failed to collect metrics", slog.Any("error", err))
+				if !strings.Contains(err.Error(), "CPU metrics not yet available") {
+					c.log.Warn("Failed to collect metrics", slog.Any("error", err))
+				}
 				time.Sleep(1 * time.Second)
 				continue
 			}

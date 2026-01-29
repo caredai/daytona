@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0
  */
 
-import { ApiProperty, ApiSchema } from '@nestjs/swagger'
-import { IsNotEmpty, IsString } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional, ApiSchema } from '@nestjs/swagger'
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator'
 
 @ApiSchema({ name: 'CreateOrganization' })
 export class CreateOrganizationDto {
@@ -20,9 +20,27 @@ export class CreateOrganizationDto {
   @ApiProperty({
     description: 'The ID of the default region for the organization',
     example: 'us',
-    required: true,
+    nullable: true,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  defaultRegionId: string
+  defaultRegionId?: string
+
+  @ApiPropertyOptional({
+    description: 'The ID of the organization',
+    example: '09a38176-ffc3-4403-846c-b1bd481dd78d',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  id?: string
+
+  @ApiPropertyOptional({
+    description: 'The owner ID of the organization',
+    example: 'user_xxx',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  userId?: string
 }

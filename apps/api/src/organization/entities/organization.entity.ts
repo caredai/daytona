@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0
  */
 
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { BeforeInsert, Column, CreateDateColumn, Entity, OneToMany, PrimaryColumn, UpdateDateColumn } from 'typeorm'
+import { v7 as uuid } from 'uuid'
 import { OrganizationUser } from './organization-user.entity'
 import { OrganizationRole } from './organization-role.entity'
 import { OrganizationInvitation } from './organization-invitation.entity'
@@ -11,8 +12,15 @@ import { RegionQuota } from './region-quota.entity'
 
 @Entity()
 export class Organization {
-  @PrimaryGeneratedColumn('uuid')
-  id: string
+  @PrimaryColumn('uuid')
+  id: string = uuid()
+
+  @BeforeInsert()
+  private generateId() {
+    if (!this.id) {
+      this.id = uuid()
+    }
+  }
 
   @Column()
   name: string

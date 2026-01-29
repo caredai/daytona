@@ -11,7 +11,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var ignoreLoggingPaths = map[string]bool{}
+var ignoreLoggingPaths = map[string]bool{
+	"/": true,
+}
 
 func LoggingMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {

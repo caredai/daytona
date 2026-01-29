@@ -26,7 +26,8 @@ func WriteStaticBinary(name string) (string, error) {
 		return "", err
 	}
 
-	daemonPath := filepath.Join(tmpBinariesDir, name)
+	binariesDir := "/var/lib/daytona/binaries"
+	daemonPath := filepath.Join(binariesDir, name)
 	_, err = os.Stat(daemonPath)
 	if err != nil && !os.IsNotExist(err) {
 		return "", err
