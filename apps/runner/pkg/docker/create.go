@@ -85,6 +85,11 @@ func (d *DockerClient) Create(ctx context.Context, sandboxDto dto.CreateSandboxD
 		return "", "", err
 	}
 
+	log.Infof("ContainerCreate...")
+	log.Infof("ContainerConfig: %+v", containerConfig)
+	log.Infof("HostConfig: %+v", hostConfig)
+	log.Infof("NetworkingConfig: %+v", networkingConfig)
+
 	c, err := d.apiClient.ContainerCreate(ctx, containerConfig, hostConfig, networkingConfig, &v1.Platform{
 		Architecture: "amd64",
 		OS:           "linux",

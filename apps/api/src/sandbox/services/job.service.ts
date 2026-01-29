@@ -5,7 +5,7 @@
 
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, LessThan, EntityManager } from 'typeorm'
+import { Repository, LessThan, EntityManager, Not } from 'typeorm'
 import { Job } from '../entities/job.entity'
 import { JobDto, JobStatus, JobType, ResourceType } from '../dto/job.dto'
 import { ResourceTypeForJobType } from '../dto/job-type-map.dto'
@@ -358,16 +358,27 @@ export class JobService {
    */
   @Cron(CronExpression.EVERY_MINUTE)
   async handleStaleJobs(): Promise<void> {
-    const staleThresholdMinutes = 10
-    const staleThreshold = new Date(Date.now() - staleThresholdMinutes * 60 * 1000)
+    const defaultStaleThresholdMinutes = 10
+    const pullSnapshotStaleThresholdMinutes = 30
+
+    const defaultStaleThreshold = new Date(Date.now() - defaultStaleThresholdMinutes * 60 * 1000)
+    const pullSnapshotStaleThreshold = new Date(Date.now() - pullSnapshotStaleThresholdMinutes * 60 * 1000)
 
     try {
       // Find jobs that are IN_PROGRESS but haven't been updated in the threshold time
       const staleJobs = await this.jobRepository.find({
-        where: {
-          status: JobStatus.IN_PROGRESS,
-          updatedAt: LessThan(staleThreshold),
-        },
+        where: [
+          {
+            status: JobStatus.IN_PROGRESS,
+            updatedAt: LessThan(defaultStaleThreshold),
+            type: Not(JobType.PULL_SNAPSHOT),
+          },
+          {
+            status: JobStatus.IN_PROGRESS,
+            updatedAt: LessThan(pullSnapshotStaleThreshold),
+            type: JobType.PULL_SNAPSHOT,
+          },
+        ],
       })
 
       if (staleJobs.length === 0) {
@@ -378,6 +389,9 @@ export class JobService {
 
       // Mark each stale job as failed with timeout error
       for (const job of staleJobs) {
+        const staleThresholdMinutes =
+          job.type === JobType.PULL_SNAPSHOT ? pullSnapshotStaleThresholdMinutes : defaultStaleThresholdMinutes
+
         try {
           await this.updateJobStatus(
             job.id,

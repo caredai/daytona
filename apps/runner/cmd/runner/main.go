@@ -93,6 +93,7 @@ func main() {
 		AWSEndpointUrl:           cfg.AWSEndpointUrl,
 		AWSAccessKeyId:           cfg.AWSAccessKeyId,
 		AWSSecretAccessKey:       cfg.AWSSecretAccessKey,
+		AWSDefaultBucket:         cfg.AWSDefaultBucket,
 		DaemonPath:               daemonPath,
 		ComputerUsePluginPath:    pluginPath,
 		NetRulesManager:          netRulesManager,

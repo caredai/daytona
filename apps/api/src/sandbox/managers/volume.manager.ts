@@ -9,12 +9,12 @@ import { Repository, In } from 'typeorm'
 import { Volume } from '../entities/volume.entity'
 import { VolumeState } from '../enums/volume-state.enum'
 import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule'
-import { S3Client, CreateBucketCommand, ListBucketsCommand, PutBucketTaggingCommand } from '@aws-sdk/client-s3'
+import { S3Client, ListBucketsCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { InjectRedis } from '@nestjs-modules/ioredis'
 import { Redis } from 'ioredis'
 import { RedisLockProvider } from '../common/redis-lock.provider'
 import { TypedConfigService } from '../../config/typed-config.service'
-import { deleteS3Bucket } from '../../common/utils/delete-s3-bucket'
+import { deleteS3Directory } from '../../common/utils/delete-s3-directory'
 
 import { TrackableJobExecutions } from '../../common/interfaces/trackable-job-executions'
 import { TrackJobExecution } from '../../common/decorators/track-job-execution.decorator'
@@ -34,6 +34,7 @@ export class VolumeManager
   private processingVolumes: Set<string> = new Set()
   private skipTestConnection = false
   private s3Client: S3Client | null = null
+  private volumeBucket: string | null = null
 
   constructor(
     @InjectRepository(Volume)
@@ -51,7 +52,7 @@ export class VolumeManager
     const region = this.configService.getOrThrow('s3.region')
     const accessKeyId = this.configService.getOrThrow('s3.accessKey')
     const secretAccessKey = this.configService.getOrThrow('s3.secretKey')
-    this.skipTestConnection = this.configService.get('skipConnections')
+    this.skipTestConnection = true
 
     this.s3Client = new S3Client({
       endpoint: endpoint.startsWith('http') ? endpoint : `http://${endpoint}`,
@@ -62,6 +63,9 @@ export class VolumeManager
       },
       forcePathStyle: true,
     })
+
+    // Get volume bucket name from configuration
+    this.volumeBucket = this.configService.getOrThrow('s3.defaultBucket')
   }
 
   async onModuleInit() {
@@ -191,32 +195,16 @@ export class VolumeManager
       // Refresh lock before S3 operation
       await this.redis.setex(lockKey, 30, '1')
 
-      // Create bucket in Minio/S3
-      const createBucketCommand = new CreateBucketCommand({
-        Bucket: volume.getBucketName(),
-      })
-
-      await this.s3Client.send(createBucketCommand)
-
+      // Create a marker object to indicate the volume directory exists
       await this.s3Client.send(
-        new PutBucketTaggingCommand({
-          Bucket: volume.getBucketName(),
-          Tagging: {
-            TagSet: [
-              {
-                Key: 'VolumeId',
-                Value: volume.id,
-              },
-              {
-                Key: 'OrganizationId',
-                Value: volume.organizationId,
-              },
-              {
-                Key: 'Environment',
-                Value: this.configService.get('environment'),
-              },
-            ],
-          },
+        new PutObjectCommand({
+          Bucket: this.volumeBucket,
+          Key: `${volume.getBucketName()}.marker`,
+          Body: JSON.stringify({
+            volumeId: volume.id,
+            organizationId: volume.organizationId,
+            environment: this.configService.get('environment'),
+          }),
         }),
       )
 
@@ -253,8 +241,21 @@ export class VolumeManager
       // Refresh lock before S3 operation
       await this.redis.setex(lockKey, 30, '1')
 
-      // Delete bucket from Minio/S3
-      await deleteS3Bucket(this.s3Client, volume.getBucketName())
+      // Delete all objects in the volume directory
+      await deleteS3Directory(this.s3Client, this.volumeBucket, `${volume.getBucketName()}/`)
+
+      // Delete the volume marker file
+      try {
+        await this.s3Client.send(
+          new DeleteObjectCommand({
+            Bucket: this.volumeBucket,
+            Key: `${volume.getBucketName()}.marker`,
+          }),
+        )
+      } catch (error) {
+        // Log but don't fail if marker doesn't exist
+        this.logger.warn(`Failed to delete marker file for volume ${volume.id}:`, error)
+      }
 
       // Refresh lock before final state update
       await this.redis.setex(lockKey, 30, '1')

@@ -7,7 +7,6 @@ package executor
 
 import (
 	"context"
-	"errors"
 
 	apiclient "github.com/daytonaio/daytona/libs/api-client-go"
 	"github.com/daytonaio/runner/pkg/api/dto"
@@ -70,11 +69,15 @@ func (e *Executor) pullSnapshot(ctx context.Context, job *apiclient.Job) (any, e
 }
 
 func (e *Executor) removeSnapshot(ctx context.Context, job *apiclient.Job) (any, error) {
+	imageName := ""
 	if job.Payload == nil || *job.Payload == "" {
-		return nil, errors.New("payload is required")
+		// return nil, errors.New("payload is required")
+		imageName = job.ResourceId
+	} else {
+		imageName = *job.Payload
 	}
 
-	return nil, e.docker.RemoveImage(ctx, *job.Payload, true)
+	return nil, e.docker.RemoveImage(ctx, imageName, true)
 }
 
 func (e *Executor) inspectSnapshotInRegistry(ctx context.Context, job *apiclient.Job) (any, error) {

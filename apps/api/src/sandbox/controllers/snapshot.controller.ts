@@ -135,7 +135,7 @@ export class SnapshotController {
     // TODO: consider - if using transient registry, prepend the snapshot name with the username
     const snapshot = createSnapshotDto.buildInfo
       ? await this.snapshotService.createFromBuildInfo(authContext.organization, createSnapshotDto)
-      : await this.snapshotService.createFromPull(authContext.organization, createSnapshotDto)
+      : await this.snapshotService.createFromPull(authContext.organization, createSnapshotDto, createSnapshotDto.general, authContext.role)
     return SnapshotDto.fromSnapshot(snapshot)
   }
 

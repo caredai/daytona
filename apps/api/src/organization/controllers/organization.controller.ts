@@ -180,7 +180,7 @@ export class OrganizationController {
     description: 'Organization created successfully',
     type: OrganizationDto,
   })
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(CombinedAuthGuard)
   @Audit({
     action: AuditAction.CREATE,
     targetType: AuditTarget.ORGANIZATION,
@@ -189,6 +189,8 @@ export class OrganizationController {
       body: (req: TypedRequest<CreateOrganizationDto>) => ({
         name: req.body?.name,
         defaultRegionId: req.body?.defaultRegionId,
+        id: req.body?.id,
+        userId: req.body?.userId,
       }),
     },
   })
@@ -196,12 +198,23 @@ export class OrganizationController {
     @AuthContext() authContext: IAuthContext,
     @Body() createOrganizationDto: CreateOrganizationDto,
   ): Promise<OrganizationDto> {
-    const user = await this.userService.findOne(authContext.userId)
-    if (!user.emailVerified && !this.configService.get('skipUserEmailVerification')) {
-      throw new ForbiddenException('Please verify your email address')
+    let userId = authContext.userId
+    if (authContext.apiKey) {
+      if (authContext.role !== 'admin') {
+        throw new ForbiddenException()
+      }
+      if (!createOrganizationDto.userId) {
+        throw new ForbiddenException('Please provider the user id')
+      }
+      userId = createOrganizationDto.userId
+    } else {
+      const user = await this.userService.findOne(authContext.userId)
+      if (!user.emailVerified && !this.configService.get('skipUserEmailVerification')) {
+        throw new ForbiddenException('Please verify your email address')
+      }
     }
 
-    const organization = await this.organizationService.create(createOrganizationDto, authContext.userId, false, true)
+    const organization = await this.organizationService.create(createOrganizationDto, userId, false, true)
     return OrganizationDto.fromOrganization(organization)
   }
 

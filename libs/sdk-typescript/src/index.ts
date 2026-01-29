@@ -23,6 +23,8 @@ export { Image } from './Image'
 export { Sandbox } from './Sandbox'
 export type { SandboxCodeToolbox } from './Sandbox'
 export type { CreateSnapshotParams } from './Snapshot'
+export { SnapshotService } from './Snapshot'
+export { VolumeService } from './Volume'
 export { ComputerUse, Mouse, Keyboard, Screenshot, Display } from './ComputerUse'
 export type { ExecutionError, ExecutionResult, OutputMessage, RunCodeOptions } from './types/CodeInterpreter'
 

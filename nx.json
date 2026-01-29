@@ -111,7 +111,7 @@
       "options": {
         "context": "{workspaceRoot}",
         "file": "{projectRoot}/Dockerfile",
-        "tags": ["daytonaio/daytona-{projectName}:$VERSION$ARCH"],
+        "tags": ["ridewindx/daytona-{projectName}:$VERSION"],
         "build-args": ["VERSION=$VERSION"]
       },
       "configurations": {
@@ -121,13 +121,13 @@
         "production-multi-platform": {
           "push": true,
           "platforms": ["linux/amd64", "linux/arm64"],
-          "tags": ["daytonaio/daytona-{projectName}:$VERSION"]
+          "tags": ["ridewindx/daytona-{projectName}:$VERSION"]
         },
         "local-registry": {
           "push": true,
           "tags": [
-            "registry:5000/daytonaio/daytona-{projectName}:$VERSION",
-            "registry:5000/daytonaio/daytona-{projectName}:latest"
+            "registry:5000/ridewindx/daytona-{projectName}:$VERSION",
+            "registry:5000/ridewindx/daytona-{projectName}:latest"
           ]
         }
       },
@@ -138,10 +138,10 @@
       "options": {
         "parallel": false,
         "commands": [
-          "docker manifest create daytonaio/daytona-{projectName}:$VERSION daytonaio/daytona-{projectName}:$VERSION-amd64 daytonaio/daytona-{projectName}:$VERSION-arm64",
-          "docker manifest push daytonaio/daytona-{projectName}:$VERSION",
-          "docker manifest create daytonaio/daytona-{projectName}:latest daytonaio/daytona-{projectName}:$VERSION-amd64 daytonaio/daytona-{projectName}:$VERSION-arm64",
-          "docker manifest push daytonaio/daytona-{projectName}:latest"
+          "docker manifest create ridewindx/daytona-{projectName}:$VERSION ridewindx/daytona-{projectName}:$VERSION-amd64 ridewindx/daytona-{projectName}:$VERSION-arm64",
+          "docker manifest push ridewindx/daytona-{projectName}:$VERSION",
+          "docker manifest create ridewindx/daytona-{projectName}:latest ridewindx/daytona-{projectName}:$VERSION-amd64 ridewindx/daytona-{projectName}:$VERSION-arm64",
+          "docker manifest push ridewindx/daytona-{projectName}:latest"
         ]
       }
     }

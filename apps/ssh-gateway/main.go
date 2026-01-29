@@ -161,7 +161,9 @@ func (g *SSHGateway) handleConnection(conn net.Conn, serverConfig *ssh.ServerCon
 	// Perform SSH handshake
 	serverConn, chans, reqs, err := ssh.NewServerConn(conn, serverConfig)
 	if err != nil {
-		log.Printf("Failed to handshake: %v", err)
+		if !strings.Contains(err.Error(), "EOF") {
+			log.Printf("Failed to handshake: %v", err)
+		}
 		return
 	}
 	defer serverConn.Close()
